@@ -1,3 +1,4 @@
+import copy
 import mock
 from mock import MagicMock, Mock
 import random
@@ -83,6 +84,7 @@ class TestPeerSession(TestWithKeysAuth, LogTestCase, testutils.PEP8MixIn):
         peer_session = PeerSession(conn)
         peer_session.p2p_service = P2PService(node, conf, keys_auth, False)
         peer_session.p2p_service.metadata_manager = MagicMock()
+        peer_session.p2p_service.key_difficulty = 2
         peer_session.send = MagicMock()
         peer_session.disconnect = MagicMock()
         peer_session._solve_challenge = MagicMock()
@@ -92,7 +94,7 @@ class TestPeerSession(TestWithKeysAuth, LogTestCase, testutils.PEP8MixIn):
                 return value
             return verify
 
-        key_id = 'deadbeef'
+        key_id = '00adbeef' + 'deadbeef'*15
         peer_info = MagicMock()
         peer_info.key = key_id
         msg = MessageHello(port=1, node_name='node2', client_key_id=key_id,
@@ -101,13 +103,22 @@ class TestPeerSession(TestWithKeysAuth, LogTestCase, testutils.PEP8MixIn):
         peer_session.verify = create_verify(False)
         peer_session._react_to_hello(msg)
         peer_session.disconnect.assert_called_with(PeerSession.DCRUnverified)
+        peer_session.disconnect.reset_mock()
 
         peer_session.verify = create_verify(True)
         peer_session._react_to_hello(msg)
         peer_session.disconnect.assert_called_with(
             PeerSession.DCRProtocolVersion)
+        peer_session.disconnect.reset_mock()
 
         msg.proto_id = P2P_PROTOCOL_ID
+
+        msg_with_weak_key = copy.deepcopy(msg)
+        msg_with_weak_key.node_info.key = 'deadbeef'*16
+        peer_session._react_to_hello(msg_with_weak_key)
+        peer_session.disconnect.assert_called_with(
+            PeerSession.DCRKeyDifficulty)
+        peer_session.disconnect.reset_mock()
 
         peer_session._react_to_hello(msg)
         assert key_id in peer_session.p2p_service.peers

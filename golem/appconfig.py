@@ -28,6 +28,7 @@ END_PORT = 60102
 RPC_ADDRESS = "localhost"
 RPC_PORT = 61000
 OPTIMAL_PEER_NUM = 10
+KEY_DIFFICULTY = 10.0
 
 USE_IP6 = 0
 ACCEPT_TASKS = 1
@@ -123,6 +124,7 @@ class AppConfig:
             seed_host="",
             seed_port=START_PORT,
             opt_peer_num=OPTIMAL_PEER_NUM,
+            key_difficulty=KEY_DIFFICULTY,
             # flags
             accept_tasks=ACCEPT_TASKS,
             send_pings=SEND_PINGS,
